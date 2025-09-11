@@ -1,6 +1,8 @@
-# CLAUDE.md
+# AGENT.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.  
+
+The goal is to generate additional comprehensive unit tests to increase the **codelines coverage** against the source file.
 
 ## Key Directories
 
@@ -12,38 +14,46 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **doc/**: Comprehensive documentation
 - **build-scripts/**: CMake build configuration scripts
 
-## Primary Focus: Unit Testing and Code Coverage
+## Ignored Directories
 
-### Current LCOV Coverage Status (Updated 2025-09-08)
-- **Line Coverage**: 17,053 / 46,936 (36.3%)
-- **Function Coverage**: 1,546 / 3,359 (46.0%)
-- **Branch Coverage**: 9,456 / 46,943 (20.1%)
-- **Report Location**: `tests/unit/wamr-lcov/index.html`
-- **Last Updated**: 2025-09-08 13:18:04
+- **language-bindings/**
+- **zephyr/**
+## Coverage Report Location
+**Report Location**: `tests/unit/wamr-lcov/wamr-lcov/index.html`
 
-### Unit Testing with GTest Framework and Follow Current Unit Code Convention
+### Overall Current LCOV Coverage Status
+- **Line Coverage**: 
+- **Function Coverage**:
+- **Branch Coverage**:
+- **Last Updated**: 2025-08-24 08:33:09
 
-#### Build and Run Unit Tests(CRITICAL)
+## Key Conduct Principles (CRITICAL)
+
+### Test Framework and Code Convention 
+- Test framework: GTest Framework 
+- Code convention: Follow Current Unit Code Convention
+
+#### Build and Run Unit Tests
 ```bash
 # Build unit tests with coverage
 cd tests/unit/{module}
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Debug -DWAMR_BUILD_COVERAGE=1
 make
-./{unit_tests_module_name}
+./[EXECUTABLE_MODULE_NAME]
 
 # Generate coverage report
 lcov --capture --directory . --output-file coverage.info
 genhtml coverage.info --output-directory coverage_report
 ```
 
-#### Unit Test Structure
+### Unit Test Structure
 - All unit tests use **Google Test (GTest)** framework
-- Test files located in `tests/unit/[module_name]/`
+- Test files located in `tests/unit/[ModuleName]/`
 - If module directory doesn't exist, create it following the pattern
 - Common test utilities in `tests/unit/common/test_helper.h`
 
-#### GTest Code Conventions
+### GTest Code Conventions
 ```cpp
 // Use test_helper.h for WAMR-specific utilities
 #include "test_helper.h"
@@ -77,8 +87,8 @@ TEST_F(WasmRuntimeTest, LoadValidModule) {
 // - DummyExecEnv: Complete test environment setup
 ```
 
-#### Creating New Unit Test Modules
-1. Create directory: `tests/unit/[module_name]/`
+### Creating New Unit Test Modules
+1. Create directory: `tests/unit/[ModuleName]/`
 2. Add `CMakeLists.txt` following existing patterns
 3. Create test files: `test_[feature].cpp`
 4. Include in main unit test build via `tests/unit/CMakeLists.txt`
@@ -86,8 +96,6 @@ TEST_F(WasmRuntimeTest, LoadValidModule) {
 ## Core Modules for Unit Testing
 
 ### Priority Areas for Coverage Improvement
-Based on current coverage (36.3% lines, 46.0% functions, 20.1% branches):
-
 1. **Runtime Common** (`core/iwasm/common/`): Core runtime APIs and utilities
 2. **Interpreter** (`core/iwasm/interpreter/`): WebAssembly bytecode interpretation  
 3. **AOT Runtime** (`core/iwasm/aot/`): Ahead-of-Time compiled module execution
@@ -114,23 +122,23 @@ Current test directories in `tests/unit/`:
 ## Coverage Improvement Workflow (CRITICAL)
 
 ### Phase 1: Module Analysis
-When user specifies a target module and target code coverage (e.g., `interpreter`, `aot`, `runtime-common`):
-
-```bash
-# 1. Analyze module coverage from current LCOV report
-# Navigate to coverage report and examine specific module
-firefox coverage_report/wamr-lcov/index.html
-# Or examine specific module path: coverage_report/wamr-lcov/wasm-micro-runtime/core/iwasm/[module]/
-
-# 2. Extract uncovered functions and lines for the module
-grep -A 5 -B 5 "uncovered" coverage_report/wamr-lcov/wasm-micro-runtime/core/iwasm/[module]/index.html
-```
+1. When user specifies a target module and target code coverage (e.g., `interpreter`, `aot`, `runtime-common`):
+    - Analyze module coverage from current LCOV report
+    - Navigate to coverage report and examine specific module
+    ```bash
+    firefox coverage_report/wamr-lcov/index.html
+    # Or examine specific module path: coverage_report/wamr-lcov/wasm-micro-runtime/core/iwasm/[module]/
+    ```
+2. Extract uncovered functions and lines for the module
+    ```bash
+    grep -A 5 -B 5 "uncovered" coverage_report/wamr-lcov/wasm-micro-runtime/core/iwasm/[module]/index.html
+    ```
 
 ### Phase 2: Test Plan Generation
-Create a systematic sub-plan in `tests/unit/[module_name]/coverage_improve_plan.md`:
+Create a systematic sub-plan in `tests/unit/[ModuleName]//[ModuleName]_coverage_improve_plan.md`:
 
 ```markdown
-# Test Plan for [Module Name]
+# Code Coverage Improve Plan for [Module Name]
 
 ## Current Coverage Status
 - Line Coverage: X/Y (Z%)
@@ -181,54 +189,63 @@ For large code file with >50 uncovered lines with 5 functions, segment uncovered
 ### Phase 3: Step-by-Step Execution
 
 #### Execute One Step at a Time
-```bash
-# 1. Generate test cases for current step (≤10 cases)
-# Create tests in tests/unit/[module_name]/test_[step_name].cpp and related CMakeLists.txt (If need)
 
-# 2. Build with coverage
-cd tests/unit/{module_name}
+1. Generate test cases for current step (≤10 cases)
+ Create tests in tests/unit/[ModuleName]/test_[step_name].cpp and related CMakeLists.txt (If need)
+
+2. Build with coverage
+```bash
+cd tests/unit/[ModuleName]
 rm -rf build/  # Clean previous build
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Debug -DWAMR_BUILD_COVERAGE=1
 make
-
-# 3. Run tests immediately after generation
-./unit_tests --gtest_filter="*[ModuleName]*[StepName]*"
-
-# 4. Generate coverage report for verification
-lcov --capture --directory . --output-file step_coverage.info
-genhtml step_coverage.info --output-directory step_coverage_report
-
-# 5. Verify coverage improvement and fix issues if any
-# Check step_coverage_report/index.html for new coverage
-
-# 6. Update test plan status
-# Mark current step as COMPLETED in coverage_improve_plan.md
-# Move to next step
 ```
+
+3. Run tests immediately after building successfully
+    ```bash
+    ./[EXECUTABLE_MODULE_NAME] --gtest_filter="*[ModuleName]*[StepName]*"
+    ```
+
+4. Generate coverage report for verification
+    ```bash
+    lcov --capture --directory . --output-file step_coverage.info
+    genhtml step_coverage.info --output-directory step_coverage_report
+    ```
+
+5. Verify coverage improvement and fix issues if any
+6. Check step_coverage_report/index.html for new coverage
+
+7. Update test plan status:   
+Mark current step as COMPLETED in [ModuleName]_coverage_improve_plan.md
+8. Move to next step in the plan
 
 ### Phase 4: Issue Resolution Protocol
 If build/test issues occur:
+1. Fix CMakeLists.txt build errors
+    - FIRST: Refer to other unit test module's CMakeLists.txt for patterns
+    - Check existing modules: aot/, shared-utils/, interpreter/, runtime-common/,and so on
+    - Copy working CMake configuration and adapt for current module
+    - Verify WAMR_BUILD_* flags match working examples
 
-```bash
-# 1. Fix compilation errors
-# - Check include paths
-# - Verify test_helper.h usage
-# - Fix syntax errors
+2. Fix compilation errors
+    - Check include paths
+    - Verify test_helper.h usage
+    - Fix syntax errors
 
-# 2. Fix test failures
-# - Review WAMR API usage
-# - Check test logic and assertions
-# - Verify test data and setup
+3. Fix test failures
+    - Review WAMR API usage
+    - Check test logic and assertions
+    - Verify test data and setup
 
-# 3. Re-run build and test cycle
-make && ./unit_tests --gtest_filter="*[FailedTest]*"
-
-# 4. Continue only after all tests pass
-```
+4. Re-run build and test cycle
+    ```bash
+    make && ./[EXECUTABLE_NAME] --gtest_filter="*[FailedTest]*"
+    ```
+5. Continue only after all tests pass
 
 ### Phase 5: Progress Tracking
-For each module, maintain status in `tests/unit/[module_name]/coverage_improve_plan.md`:
+For each module, maintain status in `tests/unit/[ModuleName]/[[EXECUTABLE_NAME]]coverage_improve_plan.md`:
 
 ```markdown
 ## Overall Progress
@@ -247,17 +264,35 @@ For each module, maintain status in `tests/unit/[module_name]/coverage_improve_p
 ```
 
 ### Workflow Commands Summary
-```bash
-# Start coverage improvement for a module
-cd tests/unit/[module_name]/
-# Create coverage_improve_plan.md if not exists
-# Implement Step 1 test cases
-# Build, test, verify coverage
-# Update coverage_improve_plan.md status
-# Proceed to Step 2
 
-# Quick verification cycle
-make && ./unit_tests --gtest_filter="*[ModuleName]*" && \
-lcov --capture --directory . --output-file temp.info && \
-genhtml temp.info --output-directory temp_report
+Start coverage improvement for a module
+```bash
+cd tests/unit/[ModuleName]/
+```
+1. Create [ModuleName]_coverage_improve_plan.md if not exists or not the date is not latest
+2. Implement Step 1 test cases code generate
+3. Build, fix, test
+4. verify coverage
+    ```bash
+    make && ./unit_tests --gtest_filter="*[ModuleName]*" && \
+    lcov --capture --directory . --output-file temp.info && \
+    genhtml temp.info --output-directory temp_report
+    ```
+5. Update [ModuleName]_coverage_improve_plan.md status
+6. Proceed to Step 2
+
+##  Final Coverage Collection
+Once all phases are complete and all test steps are implemented, build and run the entire module test suite to collect overall code coverage:
+
+```bash
+# From the module test directory
+cd wasm-micro-runtime/tests/unit
+# Configure build with coverage enabled
+cmake -S . -B build -DCOLLECT_CODE_COVERAGE=1
+# Build all tests
+cmake --build build
+# Run all tests
+ctest --test-dir build
+# Collect and generate the final coverage report
+../wamr-test-suites/spec-test-script/collect_coverage.sh unit.lcov ./build/
 ```
